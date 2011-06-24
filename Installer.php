@@ -104,8 +104,8 @@ class Installer extends Record {
 			
 			if ( $p = Permission::findByName($permission) ) {
 			
-				Record::deleteWhere( 'RolePermission', 'permission_id='.$p->id );
-				if ( Record::countFrom( 'RolePermission', 'permission_id='.$p->id ) > 0 ) return self::__ERROR( __('Could not remove Role->Permission link') . ': ' . $permission );
+				self::deleteWhere( 'RolePermission', 'permission_id='.$p->id );
+				if ( self::countFrom( 'RolePermission', 'permission_id='.$p->id ) > 0 ) return self::__ERROR( __('Could not remove Role->Permission link') . ': ' . $permission );
 				
 				if ( ! $p->delete() ) return  self::__ERROR( __('Could not remove Permission') . ': ' . $permission );
 			
@@ -167,11 +167,11 @@ class Installer extends Record {
 			
 			if ( $r = Role::findByName($role) ) {
 			
-				Record::deleteWhere('UserRole','role_id='.$r->id);
-				if ( Record::countFrom('UserRole','role_id='.$r->id) > 0 ) return self::__ERROR( __('Could not remove User->Role link') . ': ' . $role );
+				self::deleteWhere('UserRole','role_id='.$r->id);
+				if ( self::countFrom('UserRole','role_id='.$r->id) > 0 ) return self::__ERROR( __('Could not remove User->Role link') . ': ' . $role );
 				
-				Record::deleteWhere('RolePermission','role_id='.$r->id);
-				if ( Record::countFrom('RolePermission','role_id='.$r->id) > 0 ) return self::__ERROR( __('Could not remove Role->Permission link') . ': ' . $role );
+				self::deleteWhere('RolePermission','role_id='.$r->id);
+				if ( self::countFrom('RolePermission','role_id='.$r->id) > 0 ) return self::__ERROR( __('Could not remove Role->Permission link') . ': ' . $role );
 				
 				if ( ! $r->delete() ) return  self::__ERROR( __('Could not remove Role') . ': ' . $role );
 			
@@ -248,8 +248,8 @@ class Installer extends Record {
 			
 				if ( ! $p = Permission::findByName($permission) ) return self::__ERROR( __('Permission does not exist!') );
 				
-				Record::deleteWhere('RolePermission','role_id='.$r->id.', permission_id='.$p->id);
-				if ( Record::countFrom('RolePermission','role_id='.$r->id.', permission_id='.$p->id) > 0 ) return  self::__ERROR( __('Could not remove Role->Permission link!') );
+				self::deleteWhere('RolePermission','role_id='.$r->id.', permission_id='.$p->id);
+				if ( self::countFrom('RolePermission','role_id='.$r->id.', permission_id='.$p->id) > 0 ) return  self::__ERROR( __('Could not remove Role->Permission link!') );
 			
 			}
 		
@@ -264,7 +264,7 @@ class Installer extends Record {
 	//	usage:		Installer::getDriver();
 	//	returns:	driver as string
 	final public static function getDriver() {
-		return strtolower(self::$__CONN__->getAttribute(Record::ATTR_DRIVER_NAME) );
+		return strtolower(self::$__CONN__->getAttribute(self::ATTR_DRIVER_NAME) );
 	}
 	
 	//	failInstall
