@@ -31,13 +31,13 @@ class Installer extends Record {
 	//	usage:		Installer::createTable(<table name>,<create statement>);
 	//	returns:	true on success
 	//				false on failure, sets self::$LAST_ERROR on failure
-	final public static function createTable($table,$query) {
+	final public static function createTable( $table, $query ) {
 		
-		if ( self::$__CONN__->query("SELECT COUNT(*) FROM ".$table ) !== false ) return self::__ERROR( __('Table exists.') );
+		if ( self::$__CONN__->query( "SELECT COUNT(*) FROM ".$table ) !== false ) return self::__ERROR( __('Table exists.') );
 		
 		self::$__CONN__->exec($query);
 		
-		if ( self::$__CONN__->query("SELECT COUNT(*) FROM ".$table ) === false ) return self::__ERROR( __('Table not created!') );
+		if ( self::$__CONN__->query( "SELECT COUNT(*) FROM ".$table ) === false ) return self::__ERROR( __('Table not created!') );
 
 		return true;
 		
@@ -47,9 +47,9 @@ class Installer extends Record {
 	//	usage:		Installer::updateTable(<table name>,<update statement>);
 	//	returns:	true
 	//				false if table doesn't exist, sets self::$LAST_ERROR on failure
-	final public static function updateTable($table,$query) {
+	final public static function updateTable( $table, $query ) {
 	
-		if ( self::$__CONN__->query("SELECT COUNT(*) FROM ".$table ) === false ) return self::__ERROR( __('Table doesn\'t exist!') );
+		if ( self::$__CONN__->query( "SELECT COUNT(*) FROM ".$table ) === false ) return self::__ERROR( __('Table does not exist!') );
 		
 		self::$__CONN__->exec($query);
 		
@@ -61,11 +61,11 @@ class Installer extends Record {
 	//	usage:		Installer::removeTable(<table name>);
 	//	returns:	true on success
 	//				false on failure, sets self::$LAST_ERROR on failure
-	final public static function removeTable($table) {
+	final public static function removeTable( $table ) {
 	
-		self::$__CONN__->exec('DROP TABLE IF EXISTS '.$table);
+		self::$__CONN__->exec( 'DROP TABLE IF EXISTS '.$table );
 		
-		if ( self::$__CONN__->query("SELECT COUNT(*) FROM ".$table ) !== false ) return self::__ERROR( __('Table not removed!') );
+		if ( self::$__CONN__->query( "SELECT COUNT(*) FROM ".$table ) !== false ) return self::__ERROR( __('Table not removed!') );
 		
 		return true;
 	}
@@ -74,14 +74,18 @@ class Installer extends Record {
 	//	usage:		Installer::createPermissions(<comma separated list of permissions>);
 	//	returns:	true on success, skips existing permissions
 	//				false on first failure, sets self::$LAST_ERROR on failure
-	final public static function createPermissions($permissions) {
+	final public static function createPermissions( $permissions ) {
 
-		foreach (explode(',', $permissions) as $permission) {
+		foreach ( explode(',', $permissions) as $permission ) {
 			
 			$permission = trim($permission);
 			
-			if ( ! Permission::findByName($permission) )
-				if ( ! Record::insert('Permission',array('name'=>$permission)) ) return self::__ERROR( __('Could not create Permission') . ': ' . $permission );
+			if ( ! Permission::findByName($permission) ) {
+				
+				$p = new Permission( array('name'=>$permission) );
+				if ( ! $p->save() ) return self::__ERROR( __('Could not create Permission') . ': ' . $permission );
+				
+			}
 		
 		}
 
@@ -92,19 +96,18 @@ class Installer extends Record {
 	//	usage:		Installer::removePermissions(<comma separated list of permissions>);
 	//	returns:	true on success, skips non-existent permissions
 	//				false on first failure, sets self::$LAST_ERROR on failure
-	final public static function removePermissions($permissions) {
+	final public static function removePermissions( $permissions ) {
 		
-		foreach (explode(',', $permissions) as $permission) {
+		foreach ( explode(',', $permissions) as $permission ) {
 			
 			$permission = trim($permission);
 			
-			if ( $p = Permission::findByName($permission)) {
+			if ( $p = Permission::findByName($permission) ) {
 			
-				Record::deleteWhere('RolePermission','permission_id='.$p->id);
-				if ( Record::countFrom('RolePermission','permission_id='.$p->id) > 0 ) return self::__ERROR( __('Could not remove Role->Permission link') . ': ' . $permission );
+				Record::deleteWhere( 'RolePermission', 'permission_id='.$p->id );
+				if ( Record::countFrom( 'RolePermission', 'permission_id='.$p->id ) > 0 ) return self::__ERROR( __('Could not remove Role->Permission link') . ': ' . $permission );
 				
-				Record::deleteWhere('Permission','id='.$p->id);
-				if ( Record::countFrom('Permission','id='.$p->id) > 0 ) return  self::__ERROR( __('Could not remove Permission') . ': ' . $permission );
+				if ( ! $p->delete() ) return  self::__ERROR( __('Could not remove Permission') . ': ' . $permission );
 			
 			}
 		
@@ -117,7 +120,7 @@ class Installer extends Record {
 	//	usage:		Installer::renamePermission(<permission name>,<new name>);
 	//	returns:	true on success
 	//				false on failure, sets self::$LAST_ERROR on failure
-	final public static function renamePermission($permission,$name) {
+	final public static function renamePermission( $permission, $name ) {
 		
 		$permission = trim($permission);
 		$name = trim($name);
@@ -136,14 +139,16 @@ class Installer extends Record {
 	//	usage:		Installer::createRoles(<comma separated list of roles>);
 	//	returns:	true on success, skips existing roles
 	//				false on first failue, sets self::$LAST_ERROR on failure
-	final public static function createRoles($roles) {
+	final public static function createRoles( $roles ) {
 	
-		foreach (explode(',',$roles) as $role) {
+		foreach ( explode(',',$roles) as $role ) {
 			
 			$role = trim($role);
 			
-			if ( ! Role::findByName($role) )
-				if ( ! Record::insert('Role',array('name'=>$role)) ) return self::__ERROR( __('Could not add Role') . ': ' . $role );
+			if ( ! Role::findByName($role) ) {
+				$r = new Role(array('name'=>$role) );
+				if ( ! $r->save() ) return self::__ERROR( __('Could not add Role') . ': ' . $role );
+			}
 		
 		}
 		
@@ -154,13 +159,13 @@ class Installer extends Record {
 	//	usage:		Installer::removeRoles(<comma separated list of roles>);
 	//	returns:	true on success, skips non-existant roles
 	//				false on first failue, sets self::$LAST_ERROR on failure
-	final public static function removeRoles($roles) {
+	final public static function removeRoles( $roles ) {
 		
-		foreach (explode(',',$roles) as $role) {
+		foreach ( explode(',',$roles) as $role ) {
 			
 			$role = trim($role);
 			
-			if ( $r = Role::findByName($role)) {
+			if ( $r = Role::findByName($role) ) {
 			
 				Record::deleteWhere('UserRole','role_id='.$r->id);
 				if ( Record::countFrom('UserRole','role_id='.$r->id) > 0 ) return self::__ERROR( __('Could not remove User->Role link') . ': ' . $role );
@@ -168,8 +173,7 @@ class Installer extends Record {
 				Record::deleteWhere('RolePermission','role_id='.$r->id);
 				if ( Record::countFrom('RolePermission','role_id='.$r->id) > 0 ) return self::__ERROR( __('Could not remove Role->Permission link') . ': ' . $role );
 				
-				Record::deleteWhere('Role','id='.$r->id);
-				if ( Record::countFrom('Role','id='.$r->id) > 0 ) return  self::__ERROR( __('Could not remove Role') . ': ' . $role );
+				if ( ! $r->delete() ) return  self::__ERROR( __('Could not remove Role') . ': ' . $role );
 			
 			}
 		
@@ -182,7 +186,7 @@ class Installer extends Record {
 	//	usage:		Installer::renameRole(<role name>,<new name>);
 	//	returns:	true on success
 	//				false on failure, sets self::$LAST_ERROR on failure
-	final public static function renameRole($role,$name) {
+	final public static function renameRole( $role, $name ) {
 		
 		$role = trim($role);
 		$name = trim($name);
@@ -201,11 +205,11 @@ class Installer extends Record {
 	//	usage:		Installer::assignPermissions(<role name>,<comma separated list of permissions>);
 	//	returns:	true on success
 	//				false on first failure, sets self::$LAST_ERROR on failure
-	final public static function assignPermissions($role,$permissions) {
+	final public static function assignPermissions( $role, $permissions ) {
 	
 		$role = trim($role);
 	
-		if ( ! $r = Role::findByName($role)) return self::__ERROR( __('Role doesn\'t exist!') );
+		if ( ! $r = Role::findByName($role) ) return self::__ERROR( __('Role does not exist!') );
 		
 		foreach (explode(',', $permissions) as $permission) {
 			
@@ -213,9 +217,11 @@ class Installer extends Record {
 			
 			if ( ! $r->hasPermission($permission) ) {
 			
-				if ( ! $p = Permission::findByName($permission) ) return self::__ERROR( __('Permission doesn\'t exist!') );
+				if ( ! $p = Permission::findByName($permission) ) return self::__ERROR( __('Permission does not exist!') );
+				
+				$rp = new RolePermission(array('role_id'=>$r->id,'permission_id'=>$p->id) );
 			
-				if ( ! Record::insert('RolePermission',array('role_id'=>$r->id,'permission_id'=>$p->id)) ) return self::__ERROR( __('Could not assign Permission to Role!') );
+				if ( ! $rp->save() ) return self::__ERROR( __('Could not assign Permission to Role!') );
 			
 			}
 		
@@ -228,11 +234,11 @@ class Installer extends Record {
 	//	usage:		Installer::revokePermissions(<role name>,<comma separated list of permissions>);
 	//	returns:	true on success
 	//				false on first failure, sets self::$LAST_ERROR on failure
-	final public static function revokePermissions($role,$permissions) {
+	final public static function revokePermissions( $role, $permissions ) {
 	
 		$role = trim($role);
 	
-		if ( ! $r = Role::findByName($role)) return self::__ERROR( __('Role doesn\'t exist!') );
+		if ( ! $r = Role::findByName($role) ) return self::__ERROR( __('Role does not exist!') );
 		
 		foreach (explode(',', $permissions) as $permission) {
 			
@@ -240,7 +246,7 @@ class Installer extends Record {
 			
 			if ( $r->hasPermission($permission) ) {
 			
-				if ( ! $p = Permission::findByName($permission) ) return self::__ERROR( __('Permission doesn\'t exist!') );
+				if ( ! $p = Permission::findByName($permission) ) return self::__ERROR( __('Permission does not exist!') );
 				
 				Record::deleteWhere('RolePermission','role_id='.$r->id.', permission_id='.$p->id);
 				if ( Record::countFrom('RolePermission','role_id='.$r->id.', permission_id='.$p->id) > 0 ) return  self::__ERROR( __('Could not remove Role->Permission link!') );
@@ -258,7 +264,7 @@ class Installer extends Record {
 	//	usage:		Installer::getDriver();
 	//	returns:	driver as string
 	final public static function getDriver() {
-		return strtolower(self::$__CONN__->getAttribute(Record::ATTR_DRIVER_NAME));
+		return strtolower(self::$__CONN__->getAttribute(Record::ATTR_DRIVER_NAME) );
 	}
 	
 	//	failInstall
@@ -283,7 +289,7 @@ class Installer extends Record {
 	final public static function failUninstall($plugin,$message=false) {
 		if ( $message === false ) $message = self::$LAST_ERROR;
 		Flash::set('error',$message);
-		redirect(get_url('setting'));
+		redirect(get_url('setting') );
 	}
 	
 	//	__ERROR
